@@ -20,7 +20,7 @@ export function TopNav({ theme, onToggleTheme, onNewChat }: TopNavProps) {
           <GraduationCap className="h-5 w-5 text-primary-foreground" />
         </div>
         <span className="font-bold text-lg text-foreground">
-          Scholr<span className="text-primary">AI</span>
+          Campus<span className="text-primary">AI</span>
         </span>
       </div>
 
