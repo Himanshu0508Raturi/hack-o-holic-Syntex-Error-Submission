@@ -13,13 +13,23 @@ function AppLayout() {
   const navigate = useNavigate();
 
   const handleNewChat = () => {
-    chat.createSession();
-    navigate("/");
+    try {
+      const id = chat.createSession();
+      if (id) navigate("/");
+    } catch {
+      // fallback safety (very rare case)
+      navigate("/");
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col w-full">
-      <TopNav theme={theme} onToggleTheme={toggleTheme} onNewChat={handleNewChat} />
+      <TopNav
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onNewChat={handleNewChat}
+      />
+
       <main className="flex-1 flex flex-col overflow-hidden">
         <Routes>
           <Route
@@ -34,6 +44,7 @@ function AppLayout() {
               />
             }
           />
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -18,7 +18,9 @@ interface WelcomeScreenProps {
 export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: WelcomeScreenProps) {
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // ✅ NEW
   const [recordingError, setRecordingError] = useState<string | null>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -49,28 +51,35 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
   };
 
   const startRecording = async () => {
-    if (isLoading || isRecording) return;
+    if (isLoading || isRecording || isProcessing) return;
+
     setRecordingError(null);
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const preferredTypes = ["audio/wav", "audio/webm;codecs=opus", "audio/webm"];
-      const chosenType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
-      const options = chosenType ? { mimeType: chosenType } : undefined;
-      const recorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
+      // ✅ Force stable format
+      const recorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm;codecs=opus",
+      });
 
       chunksRef.current = [];
+
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) chunksRef.current.push(event.data);
       };
 
       recorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        const blob = new Blob(chunksRef.current, {
+          type: "audio/webm",
+        });
+
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
         }
+
         mediaRecorderRef.current = null;
         setIsRecording(false);
 
@@ -79,12 +88,21 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
           return;
         }
 
-        await onAudioSend(blob);
+        // ✅ Processing state
+        setIsProcessing(true);
+        try {
+          await onAudioSend(blob);
+        } catch {
+          setRecordingError("Failed to send audio. Try again.");
+        } finally {
+          setIsProcessing(false);
+        }
       };
 
       mediaRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
+
     } catch {
       setRecordingError("Microphone access denied or unavailable.");
       setIsRecording(false);
@@ -100,6 +118,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full text-center">
+
         {/* Icon */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -133,7 +152,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
           all in one place.
         </motion.p>
 
-        {/* Search input */}
+        {/* Input */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -142,6 +161,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
         >
           <div className="glass rounded-2xl flex items-center gap-3 px-5 py-3 transition-all focus-within:glow focus-within:border-primary/50">
             <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+
             <textarea
               ref={textareaRef}
               value={input}
@@ -156,10 +176,11 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
               rows={1}
               className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground min-h-[24px] max-h-[120px] py-0.5"
             />
+
             <button
               type="button"
               onClick={isRecording ? stopRecording : startRecording}
-              disabled={isLoading}
+              disabled={isLoading || isProcessing}
               className={`rounded-xl p-2 transition-colors ${
                 isRecording ? "bg-destructive/20 text-destructive" : "bg-primary/15 text-primary"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -169,15 +190,25 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
               {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
           </div>
+
           <p className="text-xs text-muted-foreground mt-2.5">
             ⌘ Enter to ask · Shift+Enter for new line
           </p>
+
+          {/* ✅ Status Indicators */}
+          {isRecording && (
+            <p className="text-xs text-primary mt-1">🎤 Recording...</p>
+          )}
+          {isProcessing && (
+            <p className="text-xs text-muted-foreground mt-1">⏳ Processing...</p>
+          )}
+
           {recordingError && (
             <p className="text-xs text-destructive mt-1">{recordingError}</p>
           )}
         </motion.div>
 
-        {/* Category pills */}
+        {/* Categories */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,6 +240,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
             </button>
           ))}
         </motion.div>
+
       </div>
     </div>
   );

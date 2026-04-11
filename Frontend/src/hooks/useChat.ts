@@ -22,26 +22,62 @@ export function useChat() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || null;
 
+  // =========================
+  // CREATE SESSION
+  // =========================
   const createSession = useCallback(() => {
     const id = crypto.randomUUID();
-    const session: ChatSession = { id, title: "New Chat", messages: [], createdAt: new Date() };
+    const session: ChatSession = {
+      id,
+      title: "New Chat",
+      messages: [],
+      createdAt: new Date(),
+    };
     setSessions((prev) => [session, ...prev]);
     setActiveSessionId(id);
     return id;
   }, []);
 
+  // =========================
+  // DELETE SESSION (FIXED)
+  // =========================
+  const deleteSession = useCallback(
+    (id: string) => {
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      if (activeSessionId === id) {
+        const remaining = sessions.filter((s) => s.id !== id);
+        setActiveSessionId(remaining.length ? remaining[0].id : null);
+      }
+    },
+    [activeSessionId, sessions]
+  );
+
+  // =========================
+  // TEXT MESSAGE
+  // =========================
   const sendMessage = useCallback(
     async (content: string) => {
       setError(null);
+
       let sessionId = activeSessionId;
       if (!sessionId) {
         sessionId = crypto.randomUUID();
-        const session: ChatSession = { id: sessionId, title: content.slice(0, 40), messages: [], createdAt: new Date() };
+        const session: ChatSession = {
+          id: sessionId,
+          title: content.slice(0, 40),
+          messages: [],
+          createdAt: new Date(),
+        };
         setSessions((prev) => [session, ...prev]);
         setActiveSessionId(sessionId);
       }
 
-      const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content, timestamp: new Date() };
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content,
+        timestamp: new Date(),
+      };
 
       setSessions((prev) =>
         prev.map((s) => {
@@ -53,25 +89,46 @@ export function useChat() {
       );
 
       setIsLoading(true);
+
       try {
         const res = await fetch("https://raturihimanshu077-scholarai.hf.space/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: content }),
         });
+
         if (!res.ok) throw new Error("Failed to get response");
+
         const data = await res.json();
-        const aiMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: data.answer, timestamp: new Date() };
-        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s)));
+
+        const aiMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: data.answer || "No response received.",
+          timestamp: new Date(),
+        };
+
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s
+          )
+        );
       } catch {
         setError("Unable to reach CampusAI. The server may be temporarily unavailable.");
+
         const errMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "Sorry, I couldn't get a response from CampusAI. The server might be starting up — please try again in a moment.",
+          content:
+            "Sorry, I couldn't get a response from CampusAI. Please try again in a moment.",
           timestamp: new Date(),
         };
-        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s)));
+
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s
+          )
+        );
       } finally {
         setIsLoading(false);
       }
@@ -79,86 +136,112 @@ export function useChat() {
     [activeSessionId]
   );
 
+  // =========================
+  // VOICE MESSAGE (IMPROVED)
+  // =========================
   const sendAudio = useCallback(
     async (audioBlob: Blob) => {
       setError(null);
+
       let sessionId = activeSessionId;
       if (!sessionId) {
         sessionId = crypto.randomUUID();
-        const session: ChatSession = { id: sessionId, title: "Voice Query", messages: [], createdAt: new Date() };
+        const session: ChatSession = {
+          id: sessionId,
+          title: "Voice Query",
+          messages: [],
+          createdAt: new Date(),
+        };
         setSessions((prev) => [session, ...prev]);
         setActiveSessionId(sessionId);
       }
 
-      const userMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+      // Temporary message
+      const tempMsgId = crypto.randomUUID();
+
+      const tempMsg: ChatMessage = {
+        id: tempMsgId,
         role: "user",
-        content: "Voice message",
+        content: "🎤 Listening...",
         timestamp: new Date(),
       };
 
       setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          const updated = { ...s, messages: [...s.messages, userMsg] };
-          if (s.messages.length === 0) updated.title = "Voice Query";
-          return updated;
-        })
+        prev.map((s) =>
+          s.id === sessionId
+            ? { ...s, messages: [...s.messages, tempMsg] }
+            : s
+        )
       );
 
       setIsLoading(true);
+
       try {
         const formData = new FormData();
-        const isWav = audioBlob.type.includes("wav");
-        formData.append("file", audioBlob, isWav ? "recording.wav" : "recording.webm");
+        formData.append("file", audioBlob, "recording.webm");
 
         const res = await fetch("https://raturihimanshu077-scholarai.hf.space/voice", {
           method: "POST",
           body: formData,
         });
 
-        if (!res.ok) throw new Error("Failed to get voice response");
+        if (!res.ok) throw new Error("Voice API failed");
 
-        const contentType = res.headers.get("content-type") || "";
-        let answer = "Voice response received.";
+        const data = await res.json();
 
-        if (contentType.includes("application/json")) {
-          const data = await res.json();
-          answer = data.answer || data.response || data.text || answer;
-        } else {
-          const text = await res.text();
-          if (text.trim()) answer = text;
-        }
+        const transcription = data.transcribed_text || "Voice input";
+        const answer = data.answer || "No response generated.";
 
-        const aiMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: answer,
-          timestamp: new Date(),
-        };
-        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s)));
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== sessionId) return s;
+
+            const updatedMessages = s.messages.map((msg) =>
+              msg.id === tempMsgId
+                ? { ...msg, content: transcription }
+                : msg
+            );
+
+            return {
+              ...s,
+              messages: [
+                ...updatedMessages,
+                {
+                  id: crypto.randomUUID(),
+                  role: "assistant",
+                  content: answer,
+                  timestamp: new Date(),
+                },
+              ],
+            };
+          })
+        );
       } catch {
-        setError("Unable to reach CampusAI voice endpoint. The server may be temporarily unavailable.");
-        const errMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Sorry, I couldn't process your audio right now. Please try again in a moment.",
-          timestamp: new Date(),
-        };
-        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s)));
+        setError("Voice request failed");
+
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  messages: [
+                    ...s.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      role: "assistant",
+                      content: "Failed to process voice. Try again.",
+                      timestamp: new Date(),
+                    },
+                  ],
+                }
+              : s
+          )
+        );
       } finally {
         setIsLoading(false);
       }
     },
     [activeSessionId]
-  );
-
-  const deleteSession = useCallback(
-    (id: string) => {
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      if (activeSessionId === id) setActiveSessionId(sessions.length > 1 ? sessions.find((s) => s.id !== id)?.id || null : null);
-    },
-    [activeSessionId, sessions]
   );
 
   return {
