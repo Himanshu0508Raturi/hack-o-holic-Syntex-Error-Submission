@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 export function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("scholrai-theme") as "light" | "dark") || "dark";
+      return (localStorage.getItem("campusai-theme") as "light" | "dark") || "dark";
     }
     return "dark";
   });
@@ -12,7 +12,7 @@ export function useTheme() {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    localStorage.setItem("scholrai-theme", theme);
+    localStorage.setItem("campusai-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));

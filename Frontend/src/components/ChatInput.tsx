@@ -33,7 +33,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-            placeholder="Ask ScholrAI anything..."
+            placeholder="Ask CampusAI anything..."
             rows={1}
             className="flex-1 bg-transparent border-none outline-none resize-none px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground min-h-[40px] max-h-[150px]"
           />
@@ -46,7 +46,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
             <Send className="h-4 w-4 text-primary-foreground" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-2">ScholrAI may produce inaccurate information. Verify important details.</p>
+        <p className="text-xs text-muted-foreground text-center mt-2">CampusAI may produce inaccurate information. Verify important details.</p>
       </div>
     </div>
   );

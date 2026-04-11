@@ -39,7 +39,7 @@ export function AppSidebar({ sessions, activeSessionId, onSelectSession, onNewCh
           <div className="gradient-bg rounded-lg p-1.5 flex-shrink-0">
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-          {!collapsed && <span className="font-bold text-lg gradient-text">ScholrAI</span>}
+          {!collapsed && <span className="font-bold text-lg gradient-text">CampusAI</span>}
         </div>
       </SidebarHeader>
 

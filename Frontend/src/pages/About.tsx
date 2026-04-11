@@ -55,7 +55,7 @@ export default function AboutPage() {
             <GraduationCap className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-4xl font-extrabold mb-3">
-            About <span className="gradient-text">ScholrAI</span>
+            About <span className="gradient-text">CampusAI</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             An intelligent, multi-agent RAG system that centralizes fragmented campus data into one unified, AI-powered academic assistant.
@@ -93,7 +93,7 @@ export default function AboutPage() {
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3">One Unified Interface</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    ScholrAI provides a single, intelligent chat interface where students can query any academic data — academic materials, previous year questions, campus notices, fee structures, and faculty information. Powered by retrieval-augmented generation, every answer is grounded in real, up-to-date data.
+                    CampusAI provides a single, intelligent chat interface where students can query any academic data — academic materials, previous year questions, campus notices, fee structures, and faculty information. Powered by retrieval-augmented generation, every answer is grounded in real, up-to-date data.
                   </p>
                 </div>
                 <div className="gradient-bg rounded-2xl p-8 flex items-center justify-center">

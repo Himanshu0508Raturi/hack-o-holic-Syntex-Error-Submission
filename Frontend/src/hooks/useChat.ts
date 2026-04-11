@@ -64,11 +64,11 @@ export function useChat() {
         const aiMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: data.answer, timestamp: new Date() };
         setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s)));
       } catch {
-        setError("Unable to reach ScholrAI. The server may be temporarily unavailable.");
+        setError("Unable to reach CampusAI. The server may be temporarily unavailable.");
         const errMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "Sorry, I couldn't get a response from ScholrAI. The server might be starting up — please try again in a moment.",
+          content: "Sorry, I couldn't get a response from CampusAI. The server might be starting up — please try again in a moment.",
           timestamp: new Date(),
         };
         setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s)));
