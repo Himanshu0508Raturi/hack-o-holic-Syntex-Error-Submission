@@ -54,7 +54,7 @@ export function useChat() {
 
       setIsLoading(true);
       try {
-        const res = await fetch("https://raturihimanshu077-scholarai.hf.space/query", {
+        const res = await fetch("https://raturihimanshu077-campusai.hf.space/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: content }),
