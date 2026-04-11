@@ -109,7 +109,7 @@ export function useChat() {
       setIsLoading(true);
       try {
         const formData = new FormData();
-        formData.append("audio", audioBlob, "recording.webm");
+        formData.append("file", audioBlob, "recording.webm");
 
         const res = await fetch("https://raturihimanshu077-scholarai.hf.space/voice", {
           method: "POST",
