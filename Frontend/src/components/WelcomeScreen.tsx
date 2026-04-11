@@ -55,7 +55,9 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const options = MediaRecorder.isTypeSupported("audio/webm") ? { mimeType: "audio/webm" } : undefined;
+      const preferredTypes = ["audio/wav", "audio/webm;codecs=opus", "audio/webm"];
+      const chosenType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const options = chosenType ? { mimeType: chosenType } : undefined;
       const recorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
 
       chunksRef.current = [];
