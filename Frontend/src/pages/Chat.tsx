@@ -9,7 +9,7 @@ interface ChatPageProps {
   isLoading: boolean;
   error: string | null;
   onSend: (message: string) => void;
-  onSendAudio: (audioBlob: Blob) => void;
+  onSendAudio: (audioBlob: Blob) => Promise<void>;
 }
 
 export default function ChatPage({ session, isLoading, error, onSend, onSendAudio }: ChatPageProps) {

@@ -11,7 +11,7 @@ const categories = [
 
 interface WelcomeScreenProps {
   onSuggestionClick: (text: string) => void;
-  onAudioSend: (audioBlob: Blob) => void;
+  onAudioSend: (audioBlob: Blob) => Promise<void>;
   isLoading: boolean;
 }
 
