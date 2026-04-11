@@ -30,6 +30,7 @@ function AppLayout() {
                 isLoading={chat.isLoading}
                 error={chat.error}
                 onSend={chat.sendMessage}
+                onSendAudio={chat.sendAudio}
               />
             }
           />

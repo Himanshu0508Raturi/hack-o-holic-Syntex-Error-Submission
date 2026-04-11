@@ -9,9 +9,10 @@ interface ChatPageProps {
   isLoading: boolean;
   error: string | null;
   onSend: (message: string) => void;
+  onSendAudio: (audioBlob: Blob) => void;
 }
 
-export default function ChatPage({ session, isLoading, error, onSend }: ChatPageProps) {
+export default function ChatPage({ session, isLoading, error, onSend, onSendAudio }: ChatPageProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function ChatPage({ session, isLoading, error, onSend }: ChatPage
   const hasMessages = session && session.messages.length > 0;
 
   if (!hasMessages) {
-    return <WelcomeScreen onSuggestionClick={onSend} />;
+    return <WelcomeScreen onSuggestionClick={onSend} onAudioSend={onSendAudio} isLoading={isLoading} />;
   }
 
   return (

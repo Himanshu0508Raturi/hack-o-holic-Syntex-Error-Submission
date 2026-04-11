@@ -79,6 +79,79 @@ export function useChat() {
     [activeSessionId]
   );
 
+  const sendAudio = useCallback(
+    async (audioBlob: Blob) => {
+      setError(null);
+      let sessionId = activeSessionId;
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        const session: ChatSession = { id: sessionId, title: "Voice Query", messages: [], createdAt: new Date() };
+        setSessions((prev) => [session, ...prev]);
+        setActiveSessionId(sessionId);
+      }
+
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: "Voice message",
+        timestamp: new Date(),
+      };
+
+      setSessions((prev) =>
+        prev.map((s) => {
+          if (s.id !== sessionId) return s;
+          const updated = { ...s, messages: [...s.messages, userMsg] };
+          if (s.messages.length === 0) updated.title = "Voice Query";
+          return updated;
+        })
+      );
+
+      setIsLoading(true);
+      try {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+
+        const res = await fetch("https://raturihimanshu077-scholarai.hf.space/voice", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Failed to get voice response");
+
+        const contentType = res.headers.get("content-type") || "";
+        let answer = "Voice response received.";
+
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          answer = data.answer || data.response || data.text || answer;
+        } else {
+          const text = await res.text();
+          if (text.trim()) answer = text;
+        }
+
+        const aiMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: answer,
+          timestamp: new Date(),
+        };
+        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s)));
+      } catch {
+        setError("Unable to reach CampusAI voice endpoint. The server may be temporarily unavailable.");
+        const errMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Sorry, I couldn't process your audio right now. Please try again in a moment.",
+          timestamp: new Date(),
+        };
+        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s)));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeSessionId]
+  );
+
   const deleteSession = useCallback(
     (id: string) => {
       setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -87,5 +160,16 @@ export function useChat() {
     [activeSessionId, sessions]
   );
 
-  return { sessions, activeSession, activeSessionId, setActiveSessionId, createSession, sendMessage, deleteSession, isLoading, error };
+  return {
+    sessions,
+    activeSession,
+    activeSessionId,
+    setActiveSessionId,
+    createSession,
+    sendMessage,
+    sendAudio,
+    deleteSession,
+    isLoading,
+    error,
+  };
 }

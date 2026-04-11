@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Search, FileText, Bell, BookOpenCheck, DollarSign } from "lucide-react";
+import { GraduationCap, Search, FileText, Bell, BookOpenCheck, DollarSign, Mic, Square } from "lucide-react";
 
 const categories = [
   { icon: FileText, label: "Academics", color: "hsl(var(--category-notes))" },
@@ -11,11 +11,18 @@ const categories = [
 
 interface WelcomeScreenProps {
   onSuggestionClick: (text: string) => void;
+  onAudioSend: (audioBlob: Blob) => void;
+  isLoading: boolean;
 }
 
-export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
+export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: WelcomeScreenProps) {
   const [input, setInput] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -24,10 +31,68 @@ export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
     }
   }, [input]);
 
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
   const handleSubmit = () => {
     if (!input.trim()) return;
     onSuggestionClick(input.trim());
     setInput("");
+  };
+
+  const startRecording = async () => {
+    if (isLoading || isRecording) return;
+    setRecordingError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const options = MediaRecorder.isTypeSupported("audio/webm") ? { mimeType: "audio/webm" } : undefined;
+      const recorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
+
+      chunksRef.current = [];
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+        mediaRecorderRef.current = null;
+        setIsRecording(false);
+
+        if (!blob.size) {
+          setRecordingError("No audio captured. Please try again.");
+          return;
+        }
+
+        await onAudioSend(blob);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setRecordingError("Microphone access denied or unavailable.");
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
   };
 
   return (
@@ -89,10 +154,25 @@ export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
               rows={1}
               className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground min-h-[24px] max-h-[120px] py-0.5"
             />
+            <button
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isLoading}
+              className={`rounded-xl p-2 transition-colors ${
+                isRecording ? "bg-destructive/20 text-destructive" : "bg-primary/15 text-primary"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              aria-label={isRecording ? "Stop recording" : "Start recording"}
+              title={isRecording ? "Stop recording" : "Record audio"}
+            >
+              {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
           </div>
           <p className="text-xs text-muted-foreground mt-2.5">
             ⌘ Enter to ask · Shift+Enter for new line
           </p>
+          {recordingError && (
+            <p className="text-xs text-destructive mt-1">{recordingError}</p>
+          )}
         </motion.div>
 
         {/* Category pills */}

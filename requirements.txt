@@ -14,3 +14,7 @@ sentence-transformers
 google-genai
 langchain-groq
 fastapi[all]
+transformers 
+torch 
+librosa 
+soundfile
