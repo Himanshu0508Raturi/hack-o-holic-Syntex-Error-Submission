@@ -1,0 +1,16 @@
+pymongo
+requests
+python-dotenv
+beautifulsoup4
+lxml
+ipykernel
+urllib3
+langchain-text-splitters
+langchain
+langgraph
+langchain-community
+tqdm
+sentence-transformers
+google-genai
+langchain-groq
+fastapi[all]
