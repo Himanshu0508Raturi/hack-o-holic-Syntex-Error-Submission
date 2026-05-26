@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Search, FileText, Bell, BookOpenCheck, DollarSign, Mic, Square } from "lucide-react";
+import { GraduationCap, Search, FileText, Bell, BookOpenCheck, DollarSign } from "lucide-react";
 
 const categories = [
   { icon: FileText, label: "Academics", color: "hsl(var(--category-notes))" },
@@ -177,18 +177,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
               className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground min-h-[24px] max-h-[120px] py-0.5"
             />
 
-            <button
-              type="button"
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isLoading || isProcessing}
-              className={`rounded-xl p-2 transition-colors ${
-                isRecording ? "bg-destructive/20 text-destructive" : "bg-primary/15 text-primary"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              aria-label={isRecording ? "Stop recording" : "Start recording"}
-              title={isRecording ? "Stop recording" : "Record audio"}
-            >
-              {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </button>
+            {/* voice input removed: microphone button intentionally omitted */}
           </div>
 
           <p className="text-xs text-muted-foreground mt-2.5">
@@ -196,16 +185,7 @@ export function WelcomeScreen({ onSuggestionClick, onAudioSend, isLoading }: Wel
           </p>
 
           {/* ✅ Status Indicators */}
-          {isRecording && (
-            <p className="text-xs text-primary mt-1">🎤 Recording...</p>
-          )}
-          {isProcessing && (
-            <p className="text-xs text-muted-foreground mt-1">⏳ Processing...</p>
-          )}
-
-          {recordingError && (
-            <p className="text-xs text-destructive mt-1">{recordingError}</p>
-          )}
+          {/* voice status indicators removed */}
         </motion.div>
 
         {/* Categories */}
